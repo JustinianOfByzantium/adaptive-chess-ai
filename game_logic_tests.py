@@ -377,3 +377,183 @@ def test_collisions():
     print("Trying to capture black piece on h7 (valid move)")
     white_queen.try_move(h, 7)
     print_board(chess_board)
+
+
+
+def test_white_pawn_en_passant():
+    active_game = Game([])
+    chess_board = np.full([8,8], dtype=Chess_Piece, fill_value=None)
+    white_pawn = Pawn(active_game, white, 5, e)
+    chess_board[4, e] = white_pawn
+    active_game.board = chess_board
+
+    black_pawn1 = Pawn(active_game, black, 7, d)
+    chess_board[6, d] = black_pawn1
+
+    black_pawn2 = Pawn(active_game, black, 7, f)
+    chess_board[6, f] = black_pawn2
+
+
+    print_board(chess_board)
+
+    print("Testing illegal en-passant, black pawn didn't move two")
+    black_pawn1.try_move(d, 6)
+    black_pawn1.try_move(d, 5)
+    white_pawn.try_move(d, 6)
+
+    print_board(chess_board)
+
+    print("Testing legal en-passant, black pawn moved two")
+    black_pawn2.try_move(f, 5)
+    white_pawn.try_move(f, 6)
+
+    print_board(chess_board)
+
+def setup_castling_board(kingside=True):
+    # Helper to set up a board for castling
+    game = Game([])
+    board = np.full([8,8], dtype=Chess_Piece, fill_value=None)
+    # Place white king and rooks in starting positions
+    king = King(game, white, 1, e)
+    if kingside:
+        rook = Rook(game, white, 1, h)
+        board[0, h] = rook
+        # Clear squares between king and rook
+        board[0, f] = None
+        board[0, g] = None
+    else:
+        rook = Rook(game, white, 1, a)
+        board[0, a] = rook
+        board[0, b] = None
+        board[0, c] = None
+        board[0, d] = None
+    board[0, e] = king
+    game.board = board
+    return game, king, rook
+
+def test_white_kingside_castling():
+    game, king, rook = setup_castling_board(kingside=True)
+    # Try to castle kingside: move king from e1 to g1
+    king.try_move(g, 1)
+
+    print_board(game.board)
+
+    # After castling, king should be on g1, rook on f1
+    assert game.board[0, g] == king
+    assert game.board[0, f] == rook
+    assert game.board[0, e] is None
+    assert game.board[0, h] is None
+
+    
+
+def test_white_queenside_castling():
+    game, king, rook = setup_castling_board(kingside=False)
+    # Try to castle queenside: move king from e1 to c1
+    king.try_move(c, 1)
+
+    print_board(game.board)
+
+    # After castling, king should be on c1, rook on d1
+    assert game.board[0, c] == king
+    assert game.board[0, d] == rook
+    assert game.board[0, e] is None
+    assert game.board[0, a] is None
+
+def test_castling_blocked():
+    # Place a piece between king and rook, castling should fail
+    game, king, rook = setup_castling_board(kingside=True)
+    bishop = Bishop(game, white, 1, f)
+    game.board[0, f] = bishop
+    king.try_move(g, 1)
+
+    print_board(game.board)
+
+
+    # King should not have moved
+    assert game.board[0, e] == king
+    assert game.board[0, h] == rook
+    assert game.board[0, g] is None
+    assert game.board[0, f] == bishop
+
+def test_castling_after_king_moves():
+    game, king, rook = setup_castling_board(kingside=True)
+    # Move king away and back, then try to castle
+    king.try_move(f, 1)
+    king.try_move(e, 1)
+    king.try_move(g, 1)
+
+    print_board(game.board)
+
+
+    # Castling should not be allowed
+    assert game.board[0, e] == king or game.board[0, f] == king
+    assert game.board[0, h] == rook or game.board[0, f] == rook
+    # King should not be on g1
+    assert game.board[0, g] is None
+
+def test_castling_after_rook_moves():
+    game, king, rook = setup_castling_board(kingside=True)
+    # Move rook away and back, then try to castle
+    rook.try_move(g, 1)
+    rook.try_move(h, 1)
+    king.try_move(g, 1)
+    
+    print_board(game.board)
+
+
+    # Castling should not be allowed
+    assert game.board[0, e] == king or game.board[0, f] == king
+    assert game.board[0, h] == rook or game.board[0, g] == rook
+    assert game.board[0, g] is None or game.board[0, g] == rook
+
+def test_castling_through_check():
+    # enemy piece blocks castle, castling should fail
+    game, king, rook = setup_castling_board(kingside=True)
+    black_queen = Queen(game, black, 4, f)
+    game.board[3, f] = black_queen
+    king.try_move(g, 1)
+
+    print_board(game.board)
+
+
+def test_check():
+    active_game = Game([])
+    chess_board = np.full([8,8], dtype=Chess_Piece, fill_value=None)
+    white_king = King(active_game, white, 5, e)
+    chess_board[4, e] = white_king
+    active_game.board = chess_board
+
+    black_queen = Queen(active_game, black, 7, d)
+    chess_board[6, d] = black_queen
+
+    white_pawn = Pawn(active_game, white, 6, d)
+    chess_board[5, d] = white_pawn
+
+    # check = white_king.is_check(white_king.rank, white_king.file)
+    # print(check)
+
+    black_queen.try_move(c, 7)
+
+    check = white_king.is_check(white_king.rank, white_king.file)
+    print(check)
+
+    black_queen.try_move(e, 7)
+
+    check = white_king.is_check(white_king.rank, white_king.file)
+    print(check)
+    print_board(chess_board)
+
+    
+def test_knight_check():
+    active_game = Game([])
+    chess_board = np.full([8,8], dtype=Chess_Piece, fill_value=None)
+    white_king = King(active_game, white, 5, e)
+    chess_board[4, e] = white_king
+    active_game.board = chess_board
+
+    black_knight = Knight(active_game, black, 7, f)
+    chess_board[6, f] = black_knight
+
+    check = white_king.is_check(white_king.rank, white_king.file)
+    print(check)
+    print_board(chess_board)

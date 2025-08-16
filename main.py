@@ -2,9 +2,10 @@ import numpy as np
 from macros import *
 from game_logic import *
 import game_logic_tests
+from game_text import *
 
 def init():
-    active_game = Game([])
+    active_game = Game()
     active_pieces = []
 
     white_a_pawn = Pawn(active_game, white, 2, a)
@@ -96,4 +97,14 @@ if __name__ == "__main__":
     # game_logic_tests.knight_basic_moves()
     # game_logic_tests.test_black_pawn_basic_moves()
     # game_logic_tests.test_white_pawn_basic_moves()
-    game_logic_tests.test_collisions()
+    # game_logic_tests.test_collisions()
+    # game_logic_tests.test_white_pawn_en_passant()
+    # game_logic_tests.test_castling_after_king_moves()
+    # game_logic_tests.test_castling_after_rook_moves()
+    # game_logic_tests.test_castling_blocked()
+    # game_logic_tests.test_white_kingside_castling()
+    # game_logic_tests.test_white_queenside_castling()
+    # game_logic_tests.test_check()
+    # game_logic_tests.test_knight_check()
+    # game_logic_tests.test_castling_through_check()
+    play_game()

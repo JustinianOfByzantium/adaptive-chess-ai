@@ -2,7 +2,7 @@ import numpy as np
 from macros import *
 
 class Game:
-    def __init__(self, game_pieces: np.ndarray):
+    def __init__(self, game_pieces: np.ndarray = [], default_board = False):
         self.board = np.empty([8,8], dtype=object)
 
         self.turn = white
@@ -29,9 +29,60 @@ class Game:
         # 7: black en-passant
         # 8: black pawn promotion
         # 9: castle part 2
-        
-        
         self.last_move_type = NORMAL
+
+
+        if (default_board):
+            white_a_pawn = Pawn(self, white, 2, a)
+            white_b_pawn = Pawn(self, white, 2, b)
+            white_c_pawn = Pawn(self, white, 2, c)
+            white_d_pawn = Pawn(self, white, 2, d)
+            white_e_pawn = Pawn(self, white, 2, e)
+            white_f_pawn = Pawn(self, white, 2, f)
+            white_g_pawn = Pawn(self, white, 2, g)
+            white_h_pawn = Pawn(self, white, 2, h)
+            white_queenside_rook = Rook(self, white, 1, a)
+            white_kingside_rook = Rook(self, white, 1, h)
+            white_queenside_knight = Knight(self, white, 1, b)
+            white_kingside_knight = Knight(self, white, 1, g)
+            white_dark_square_bishop = Bishop(self, white, 1, c)
+            white_light_square_bishop = Bishop(self, white, 1, f)
+            white_queen = Queen(self, white, 1, d)
+            white_king = King(self, white, 1, e)
+
+
+            black_a_pawn = Pawn(self, black, 7, a)
+            black_b_pawn = Pawn(self, black, 7, b)
+            black_c_pawn = Pawn(self, black, 7, c)
+            black_d_pawn = Pawn(self, black, 7, d)
+            black_e_pawn = Pawn(self, black, 7, e)
+            black_f_pawn = Pawn(self, black, 7, f)
+            black_g_pawn = Pawn(self, black, 7, g)
+            black_h_pawn = Pawn(self, black, 7, h)
+            black_queenside_rook = Rook(self, black, 8, a)
+            black_kingside_rook = Rook(self, black, 8, h)
+            black_queenside_knight = Knight(self, black, 8, b)
+            black_kingside_knight = Knight(self, black, 8, g)
+            black_light_square_bishop = Bishop(self, black, 8, c)
+            black_dark_square_bishop = Bishop(self, black, 8, f)
+            black_queen = Queen(self, black, 8, d)
+            black_king = King(self, black, 8, e)
+
+
+            chess_board = np.full([8,8], dtype = Chess_Piece, fill_value=None)
+            chess_board[7] = [black_queenside_rook, black_queenside_knight, black_light_square_bishop, black_queen, black_king, black_dark_square_bishop, black_kingside_knight, black_kingside_rook]
+            chess_board[6] = [black_a_pawn, black_b_pawn, black_c_pawn, black_d_pawn, black_e_pawn, black_f_pawn, black_g_pawn, black_h_pawn]
+            chess_board[1] = [white_a_pawn, white_b_pawn, white_c_pawn, white_d_pawn, white_e_pawn, white_f_pawn, white_g_pawn, white_h_pawn]
+            chess_board[0] = [white_queenside_rook, white_queenside_knight, white_light_square_bishop, white_queen, white_king, white_dark_square_bishop, white_kingside_knight, white_kingside_rook]
+
+            self.active_pieces.extend(chess_board[7])
+            self.active_pieces.extend(chess_board[6])
+            self.active_pieces.extend(chess_board[1])
+            self.active_pieces.extend(chess_board[0])
+            self.active_pieces = np.array(self.active_pieces, dtype = Chess_Piece)
+            self.board = chess_board
+
+        
 
 class Chess_Piece:
     def __init__(self, m_game: Game, color: bool, rank: int, file: int):
@@ -108,16 +159,16 @@ class Chess_Piece:
     def scan_diag(self, old_rank, old_file, step: int, file_dir: int, rank_dir):
         file_range_dir = 1 if file_dir else -1
         rank_range_dir = 1 if rank_dir else -1
-        print("file_range_dir: ", file_range_dir)
-        print("rank_range_dir: ", rank_range_dir)
-        print("old_file: ", old_file)
-        print("old_rank: ", old_rank)
-        print("step: ", step)
+        # print("file_range_dir: ", file_range_dir)
+        # print("rank_range_dir: ", rank_range_dir)
+        # print("old_file: ", old_file)
+        # print("old_rank: ", old_rank)
+        # print("step: ", step)
         h_step = step * rank_range_dir
         f_traversed = 1
         for file in range(old_file + rank_range_dir, old_file + h_step, rank_range_dir):
             rank = old_rank + file_range_dir * f_traversed
-            print("Currently scanning the square: ", file, ", ", rank)
+            # print("Currently scanning the square: ", file, ", ", rank)
             if file < 0 or file > 7 or rank < 0 or rank > 7:
                 return None
             if self.m_game.board[rank, file] is not None:
@@ -128,9 +179,12 @@ class Chess_Piece:
         
 
     def unique_move(self, type: int, new_rank, new_file):
+        # print("Unique_move called for type: ", type)
         if (type == NORMAL):
+            self.m_game.en_passant_square = None
             pass
         elif (type == W_KS_CASTLE):
+            self.m_game.en_passant_square = None
             self.m_game.w_kingside_castle_rights = False
             self.m_game.w_queenside_castle_rights = False
 
@@ -139,20 +193,33 @@ class Chess_Piece:
             assert(kingside_rook is not None)
 
             self.m_game.last_move_type = NORMAL
+            print("moving rook")
             kingside_rook.move(0, f)
+
+            print_board(self.m_game.board)
         elif (type == W_QS_CASTLE):
+            self.m_game.en_passant_square = None
             pass
         elif (type == W_EN_PASSANT):
+            ep_square = self.m_game.en_passant_square
+            self.m_game.board[ep_square[0] - 1, ep_square[1]] = None
             self.m_game.en_passant_square = None
+            
         elif (type == W_PROMOTION):
+            self.m_game.en_passant_square = None
             pass
         elif (type == B_KS_CASTLE):
+            self.m_game.en_passant_square = None
             pass
         elif (type == B_QS_CASTLE):
+            self.m_game.en_passant_square = None
             pass
         elif (type == B_EN_PASSANT):
+            ep_square = self.m_game.en_passant_square
+            self.m_game.board[ep_square[0] + 1, ep_square[1]] = None
             self.m_game.en_passant_square = None
         elif (type == B_PROMOTION):
+            self.m_game.en_passant_square = None
             pass
         elif (type == W_PAWN_2S):
             self.m_game.en_passant_square = (new_rank - 1, new_file)
@@ -164,13 +231,7 @@ class Chess_Piece:
     Final move function, only called once valid move has been verified
     """
     def move(self, new_rank: int, new_file: int):
-        board: np.ndarray = self.m_game.board
-
-        # print("Moving piece to new_rank = ", new_rank, " new_file = ", new_file)
-        board[new_rank, new_file] = self
-        # print("Vacating old square at self.rank = ", self.rank, "self.file = ", self.file)
-        board[self.rank, self.file] = None
-
+        # board: np.ndarray = self.m_game.board
 
         # update if enemy king is in check
 
@@ -186,23 +247,44 @@ class Chess_Piece:
                 self.m_game.b_kingside_castling_rights = False
                 self.m_game.b_queenside_castling_rights = False
             
+        elif (type(self) == Rook):
+            if (self.color and self.file == h):
+                self.m_game.w_kingside_castle_rights = False
+            elif (self.color and self.file == a):
+                self.m_game.w_queenside_castle_rights = False
+            elif (not self.color and self.file == a):
+                self.m_game.b_kingside_castle_rights = False
+            elif (not self.color and self.file == h):
+                self.m_game.b_queenside_castle_rights = False
         
         elif (type(self) == Pawn):
             self.has_moved = True
                 
-        self.rank = new_rank
-        self.file = new_file
+        
         
         # specific situation moves
         self.unique_move(self.m_game.last_move_type, new_rank, new_file)
         
+        # print("Moving piece to new_rank = ", new_rank, " new_file = ", new_file)
+        self.m_game.board[new_rank, new_file] = self
+        # print("Vacating old square at self.rank = ", self.rank, "self.file = ", self.file)
+        self.m_game.board[self.rank, self.file] = None
+
+        self.rank = new_rank
+        self.file = new_file
+
+        self.m_game.turn = not self.m_game.turn
 
 
     """
     Checks universal requirements regardless of piece type, then checks if specific piece move is valid
     """
-    def try_move(self, new_file, new_rank):
-        new_rank -= 1
+    def try_move(self, new_file, new_rank, debug_mode = True):
+        # Enforce correct move order
+        if (self.m_game.turn != self.color):
+            print("Cannot move on opponent's turn")
+
+        new_rank -= debug_mode
         if (new_rank == self.rank and new_file == self.file):
             print("Piece cannot move to own square")
             return False
@@ -218,6 +300,7 @@ class Chess_Piece:
             # add condition here which evaluates if side that just moved is in check at end of turn.
             # if so, must find a new move. 
             print("Valid move")
+            # print("Moving piece to new square")
             self.move(new_rank, new_file)
         else:
             print("Invalid move")
@@ -248,7 +331,7 @@ class King(Chess_Piece):
 
         # cannot castle out of check
         # Determine color-specific variables
-        in_check = self.m_game.white_in_check if self.color else self.m_game.black_in_check
+        in_check = self.is_check(self.rank, self.file)
         kingside_rights = self.m_game.w_kingside_castle_rights if self.color else self.m_game.b_kingside_castle_rights
         queenside_rights = self.m_game.w_queenside_castle_rights if self.color else self.m_game.b_queenside_castle_rights
         rank = 0 if self.color else 7
@@ -270,18 +353,20 @@ class King(Chess_Piece):
                 print(f"Cannot castle: no {'white' if self.color else 'black'} kingside castling rights")
                 return False
             pieces_block = self.scan_rank(old_file=e, new_file=g, rank=rank, direction=1) is not None
-            enemies_block = False
+            enemies_block = self.is_check(rank, f) or self.is_check(rank, g)
             castling_blocked = enemies_block or pieces_block
         else:
             if not queenside_rights:
                 print(f"Cannot castle: no {'white' if self.color else 'black'} queenside castling rights")
                 return False
-            pieces_block = self.scan_rank(old_file=e, new_file=c, rank=rank, direction=0) is not None
-            enemies_block = False
+            pieces_block = self.scan_rank(old_file=e, new_file=b, rank=rank, direction=0) is not None
+            enemies_block = self.is_check(rank, d) or self.is_check(rank, c)
             castling_blocked = enemies_block or pieces_block
 
         if castling_blocked:
             print("Cannot castle, path is blocked")
+            print("pieces_block: ", pieces_block)
+            print("enemies_block: ", enemies_block)
             return False
 
         print("Castling is legal")
@@ -315,8 +400,71 @@ class King(Chess_Piece):
         return True
         
     
+    def is_check(self, rank, file):
+
+        # check along orthogonal and diagonal directions for pieces. If first piece encountered is opposite
+        # color, then king would be in check at that location. If first piece encountered is own color, then
+        # king is not threatened in that direction
 
 
+        # check orthogonal moves
+        piece_N = self.scan_file(rank, 7, file, True) 
+        piece_S = self.scan_file(rank, 0, file, False) 
+        piece_W = self.scan_rank(rank, file, 7, True) 
+        piece_E = self.scan_rank(rank, file, 0, False) 
+
+        # print("piece_N: " +  str(type(piece_N)))
+
+        piece_arr = [piece_N, piece_S, piece_W, piece_E]
+        for piece in piece_arr:
+            if piece is None:
+                continue
+            if piece.color != self.color:
+                if type(piece) == Rook or type(piece) == Queen:
+                    return True
+                elif type(piece) == King:
+                    # if king, must be one displacement away      
+                    if (abs(piece.rank - rank) == 1 or abs(piece.file - file) == 1):
+                        return True
+                
+        # check diagonal moves
+        piece_NE = self.scan_diag(rank, file, 8, True, True) 
+        piece_SE = self.scan_diag(rank, file, 8, False, True)
+        piece_SW = self.scan_diag(rank, file, 8, False, False)
+        piece_NW = self.scan_diag(rank, file, 8, True, False)
+
+        # print("piece_NW: " +  str(type(piece_NW)))
+
+        piece_arr = [piece_NE, piece_SE, piece_SW, piece_NW]
+        for piece in piece_arr:
+            if piece is None:
+                continue
+            if piece.color != self.color:
+                if type(piece) == Bishop or type(piece) == Queen:
+                    return True
+                elif type(piece) == King:
+                    # if king, must be one displacement away
+                    if (abs(piece.rank - rank) == 1 or abs(piece.file - file) == 1):
+                        return True
+                elif type(piece) == Pawn:
+                    if (self.color): # if white
+                        if ((piece.rank - rank) == 1 and abs(piece.file - file) == 1):
+                            return True   
+            
+        # Otherwise, need to check knight moves
+        for move in KNIGHT_MOVES:
+            curr_rank = rank - move[0]
+            curr_file = file - move[1]
+
+            if (curr_rank not in range(8) or curr_file not in range(8)):
+                 continue
+            
+            piece = self.m_game.board[curr_rank][curr_file]
+            if (type(piece) == Knight):
+                if self.color != piece.color:
+                    return True
+    
+        return False
 
     def __str__(self):
         return super().__str__() + "K"
