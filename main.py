@@ -107,4 +107,17 @@ if __name__ == "__main__":
     # game_logic_tests.test_check()
     # game_logic_tests.test_knight_check()
     # game_logic_tests.test_castling_through_check()
+    
+    
     play_game()
+
+    # test_move_str1 = "e4!!"
+    # print(remove_annotations(test_move_str1))
+
+    # test_move_str2 = "O-O-O?!"
+    # print(remove_annotations(test_move_str2))
+
+    # test_move_str3 = "a6#"
+    # print(remove_annotations(test_move_str3))
+
+

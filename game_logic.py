@@ -1,6 +1,98 @@
 import numpy as np
 from macros import *
 
+# Static Functions 
+
+"""
+Returns the first piece encounter along rank
+Gets called with rank1 = starting rank, rank2 = destination rank
+:param direction: 1 = Going right, 0 = Going left
+"""
+def scan_rank(board, rank, old_file, new_file, direction: int, include_ends = False, target_piece_type = None, target_piece_color = black):
+    range_dir = 1 if direction else -1
+    displ = abs(new_file - old_file)
+
+    start = old_file + range_dir - (include_ends * range_dir)
+    end = new_file + (include_ends * range_dir)
+    print(start, end)
+    for file in range(start, end, range_dir):
+        if file < 0 or file > 7:
+            return None
+        
+        candidate_piece = board[rank, file]
+        if candidate_piece is not None:
+            # print(rank, file)
+            # print(target_piece_type)
+            # print(type(candidate_piece))
+            # print("---")
+            # print(target_piece_color)
+            # print(candidate_piece.color)
+            if target_piece_type is None or (type(candidate_piece) == target_piece_type and candidate_piece.color == target_piece_color):
+                return candidate_piece
+    return None
+
+"""
+Checks if pieces block squares in between self and final destination along rank
+Gets called with rank1 = starting rank, rank2 = destination rank
+:param direction: 1 = Going up, 0 = Going down, -1 = scan entire file
+"""
+def scan_file(board, old_rank, new_rank, file, direction: int, include_ends = False, target_piece_type = None, target_piece_color = black):
+    range_dir = 1 if direction == 1 else -1
+
+    displ = abs(new_rank - old_rank)
+
+    start = old_rank + range_dir - (include_ends * range_dir)
+    end = new_rank + (include_ends * range_dir)
+    for rank in range(start, end, range_dir):
+        if rank < 0 or rank > 7:
+            return None
+        
+        candidate_piece = board[rank, file]
+        if candidate_piece is not None:
+            # print(rank, file)
+            # print(target_piece_type)
+            # print(type(candidate_piece))
+            # print("---")
+            # print(target_piece_color)
+            # print(candidate_piece.color)
+            if target_piece_type is None or (type(candidate_piece) == target_piece_type and candidate_piece.color == target_piece_color):
+                return candidate_piece
+    return None
+
+"""
+:param file_dir: 1 = Going up, 0 = Going down
+:param rank_dir: 1 = Going right, 0 = Going left
+
+"""
+def scan_diag(board, old_rank, old_file, step: int, file_dir: int, rank_dir, include_ends = False, target_piece_type = None, target_piece_color = black):
+    file_range_dir = 1 if file_dir else -1
+    rank_range_dir = 1 if rank_dir else -1
+    # print("file_range_dir: ", file_range_dir)
+    # print("rank_range_dir: ", rank_range_dir)
+    # print("old_file: ", old_file)
+    # print("old_rank: ", old_rank)
+    # print("step: ", step)
+    h_step = step * rank_range_dir
+    f_traversed = 1
+
+    start = old_file + rank_range_dir - (include_ends * rank_range_dir)
+    end =  old_file + h_step + (include_ends * rank_range_dir)
+    for file in range(start, end, rank_range_dir):
+        rank = old_rank + file_range_dir * f_traversed
+        # print("Currently scanning the square: ", file, ", ", rank)
+        if file < 0 or file > 7 or rank < 0 or rank > 7:
+            return None
+        
+        candidate_piece = board[rank, file]
+        if candidate_piece is not None:
+            if target_piece_type is None or (type(candidate_piece) == target_piece_type and candidate_piece.color == target_piece_color):
+                return candidate_piece
+        f_traversed += 1
+            
+    return None
+
+# Classes
+
 class Game:
     def __init__(self, game_pieces: np.ndarray = [], default_board = False):
         self.board = np.empty([8,8], dtype=object)
@@ -117,65 +209,6 @@ class Chess_Piece:
         #     print("Result: going down")
         return new_rank > old_rank
 
-
-    
-    """
-    Checks if pieces block squares in between self and final destination along rank
-    Gets called with rank1 = starting rank, rank2 = destination rank
-    :param direction: 1 = Going up, 0 = Going down
-    """
-    def scan_file(self, old_rank, new_rank, file, direction: bool):
-        range_dir = 1 if direction else -1
-        displ = abs(new_rank - old_rank)
-        for rank in range(old_rank + range_dir, new_rank, range_dir):
-            if rank < 0 or rank > 7:
-                return None
-            if self.m_game.board[rank, file] is not None:
-                return self.m_game.board[rank, file]
-        return None
-
-    """
-    Returns the first piece encounter along rank
-    Gets called with rank1 = starting rank, rank2 = destination rank
-    :param direction: 1 = Going right, 0 = Going left
-    """
-    def scan_rank(self, rank, old_file, new_file, direction: int):
-        range_dir = 1 if direction else -1
-        displ = abs(new_file - old_file)
-        for file in range(old_file + range_dir, new_file, range_dir):
-            if file < 0 or file > 7:
-                return None
-            if self.m_game.board[rank, file] is not None:
-                return self.m_game.board[rank, file]
-        return None
-
-            
-    
-    """
-    :param file_dir: 1 = Going up, 0 = Going down
-    :param rank_dir: 1 = Going right, 0 = Going left
-
-    """
-    def scan_diag(self, old_rank, old_file, step: int, file_dir: int, rank_dir):
-        file_range_dir = 1 if file_dir else -1
-        rank_range_dir = 1 if rank_dir else -1
-        # print("file_range_dir: ", file_range_dir)
-        # print("rank_range_dir: ", rank_range_dir)
-        # print("old_file: ", old_file)
-        # print("old_rank: ", old_rank)
-        # print("step: ", step)
-        h_step = step * rank_range_dir
-        f_traversed = 1
-        for file in range(old_file + rank_range_dir, old_file + h_step, rank_range_dir):
-            rank = old_rank + file_range_dir * f_traversed
-            # print("Currently scanning the square: ", file, ", ", rank)
-            if file < 0 or file > 7 or rank < 0 or rank > 7:
-                return None
-            if self.m_game.board[rank, file] is not None:
-                return self.m_game.board[rank, file]
-            f_traversed += 1
-                
-        return None
         
 
     def unique_move(self, type: int, new_rank, new_file):
@@ -352,14 +385,14 @@ class King(Chess_Piece):
             if not kingside_rights:
                 print(f"Cannot castle: no {'white' if self.color else 'black'} kingside castling rights")
                 return False
-            pieces_block = self.scan_rank(old_file=e, new_file=g, rank=rank, direction=1) is not None
+            pieces_block = scan_rank(self.m_game.board, old_file=e, new_file=g, rank=rank, direction=1) is not None
             enemies_block = self.is_check(rank, f) or self.is_check(rank, g)
             castling_blocked = enemies_block or pieces_block
         else:
             if not queenside_rights:
                 print(f"Cannot castle: no {'white' if self.color else 'black'} queenside castling rights")
                 return False
-            pieces_block = self.scan_rank(old_file=e, new_file=b, rank=rank, direction=0) is not None
+            pieces_block = scan_rank(self.m_game.board, old_file=e, new_file=b, rank=rank, direction=0) is not None
             enemies_block = self.is_check(rank, d) or self.is_check(rank, c)
             castling_blocked = enemies_block or pieces_block
 
@@ -408,10 +441,10 @@ class King(Chess_Piece):
 
 
         # check orthogonal moves
-        piece_N = self.scan_file(rank, 7, file, True) 
-        piece_S = self.scan_file(rank, 0, file, False) 
-        piece_W = self.scan_rank(rank, file, 7, True) 
-        piece_E = self.scan_rank(rank, file, 0, False) 
+        piece_N = scan_file(self.m_game.board, rank, 7, file, True) 
+        piece_S = scan_file(self.m_game.board, rank, 0, file, False) 
+        piece_W = scan_rank(self.m_game.board, rank, file, 7, True) 
+        piece_E = scan_rank(self.m_game.board, rank, file, 0, False) 
 
         # print("piece_N: " +  str(type(piece_N)))
 
@@ -428,10 +461,10 @@ class King(Chess_Piece):
                         return True
                 
         # check diagonal moves
-        piece_NE = self.scan_diag(rank, file, 8, True, True) 
-        piece_SE = self.scan_diag(rank, file, 8, False, True)
-        piece_SW = self.scan_diag(rank, file, 8, False, False)
-        piece_NW = self.scan_diag(rank, file, 8, True, False)
+        piece_NE = scan_diag(self.m_game.board, rank, file, 8, True, True) 
+        piece_SE = scan_diag(self.m_game.board, rank, file, 8, False, True)
+        piece_SW = scan_diag(self.m_game.board, rank, file, 8, False, False)
+        piece_NW = scan_diag(self.m_game.board, rank, file, 8, True, False)
 
         # print("piece_NW: " +  str(type(piece_NW)))
 
@@ -535,10 +568,10 @@ class Rook(Chess_Piece):
             return False
         elif (self.rank != new_rank and self.file == new_file):
             direction = self.calc_vertical_direction(self.rank, new_rank)
-            return self.scan_file(self.rank, new_rank, self.file, direction) is None
+            return scan_file(self.m_game.board, self.rank, new_rank, self.file, direction) is None
         else:
             direction = self.calc_horizontal_direction(self.file, new_file)
-            return self.scan_rank(self.file, new_file, self.rank, direction) is None
+            return scan_rank(self.m_game.board, self.file, new_file, self.rank, direction) is None
     
     def __str__(self):
         return super().__str__() + "R"
@@ -574,7 +607,7 @@ class Bishop(Chess_Piece):
             
             file_dir = self.calc_vertical_direction(self.rank, new_rank)
             rank_dir = self.calc_horizontal_direction(self.file, new_file)
-            if (self.scan_diag(self.rank, self.file, file_displ, file_dir, rank_dir) is None):
+            if (scan_diag(self.m_game.board, self.rank, self.file, file_displ, file_dir, rank_dir) is None):
                 return True
             else:
                 print("Invalid Bishop move: piece blocking the way")
@@ -601,7 +634,7 @@ class Queen(Chess_Piece):
                 direction_on_file = self.calc_vertical_direction(old_rank=self.rank, new_rank=new_rank)
                 direction_on_rank = self.calc_horizontal_direction(old_file=self.file, new_file=new_file)
 
-                if (self.scan_diag(self.rank, self.file, file_displ, direction_on_file, direction_on_rank) is None):
+                if (scan_diag(self.m_game.board, self.rank, self.file, file_displ, direction_on_file, direction_on_rank) is None):
                     return True
                 else:
                     return False
@@ -609,10 +642,10 @@ class Queen(Chess_Piece):
         # otherwise, check conditions for rook move
         elif (self.rank != new_rank and self.file == new_file):
             direction = self.calc_vertical_direction(self.rank, new_rank)
-            return self.scan_file(self.rank, new_rank, self.file, direction) is None
+            return scan_file(self.m_game.board, self.rank, new_rank, self.file, direction) is None
         else:
             direction = self.calc_horizontal_direction(self.file, new_file)
-            return self.scan_rank(self.file, new_file, self.rank, direction) is None
+            return scan_rank(self.m_game.board, self.file, new_file, self.rank, direction) is None
 
     def __str__(self):
         return super().__str__() + "Q"
