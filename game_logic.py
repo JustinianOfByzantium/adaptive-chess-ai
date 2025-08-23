@@ -1,95 +1,11 @@
 import numpy as np
 from macros import *
 
-# Static Functions 
 
-"""
-Returns the first piece encounter along rank
-Gets called with rank1 = starting rank, rank2 = destination rank
-:param direction: 1 = Going right, 0 = Going left
-"""
-def scan_rank(board, rank, old_file, new_file, direction: int, include_ends = False, target_piece_type = None, target_piece_color = black):
-    range_dir = 1 if direction else -1
-    displ = abs(new_file - old_file)
 
-    start = old_file + range_dir - (include_ends * range_dir)
-    end = new_file + (include_ends * range_dir)
-    print(start, end)
-    for file in range(start, end, range_dir):
-        if file < 0 or file > 7:
-            return None
-        
-        candidate_piece = board[rank, file]
-        if candidate_piece is not None:
-            # print(rank, file)
-            # print(target_piece_type)
-            # print(type(candidate_piece))
-            # print("---")
-            # print(target_piece_color)
-            # print(candidate_piece.color)
-            if target_piece_type is None or (type(candidate_piece) == target_piece_type and candidate_piece.color == target_piece_color):
-                return candidate_piece
-    return None
 
-"""
-Checks if pieces block squares in between self and final destination along rank
-Gets called with rank1 = starting rank, rank2 = destination rank
-:param direction: 1 = Going up, 0 = Going down, -1 = scan entire file
-"""
-def scan_file(board, old_rank, new_rank, file, direction: int, include_ends = False, target_piece_type = None, target_piece_color = black):
-    range_dir = 1 if direction == 1 else -1
 
-    displ = abs(new_rank - old_rank)
 
-    start = old_rank + range_dir - (include_ends * range_dir)
-    end = new_rank + (include_ends * range_dir)
-    for rank in range(start, end, range_dir):
-        if rank < 0 or rank > 7:
-            return None
-        
-        candidate_piece = board[rank, file]
-        if candidate_piece is not None:
-            # print(rank, file)
-            # print(target_piece_type)
-            # print(type(candidate_piece))
-            # print("---")
-            # print(target_piece_color)
-            # print(candidate_piece.color)
-            if target_piece_type is None or (type(candidate_piece) == target_piece_type and candidate_piece.color == target_piece_color):
-                return candidate_piece
-    return None
-
-"""
-:param file_dir: 1 = Going up, 0 = Going down
-:param rank_dir: 1 = Going right, 0 = Going left
-
-"""
-def scan_diag(board, old_rank, old_file, step: int, file_dir: int, rank_dir, include_ends = False, target_piece_type = None, target_piece_color = black):
-    file_range_dir = 1 if file_dir else -1
-    rank_range_dir = 1 if rank_dir else -1
-    # print("file_range_dir: ", file_range_dir)
-    # print("rank_range_dir: ", rank_range_dir)
-    # print("old_file: ", old_file)
-    # print("old_rank: ", old_rank)
-    # print("step: ", step)
-    h_step = step * rank_range_dir
-    f_traversed = 1
-
-    start = old_file + rank_range_dir - (include_ends * rank_range_dir)
-    end =  old_file + h_step + (include_ends * rank_range_dir)
-    for file in range(start, end, rank_range_dir):
-        rank = old_rank + file_range_dir * f_traversed
-        # print("Currently scanning the square: ", file, ", ", rank)
-        if file < 0 or file > 7 or rank < 0 or rank > 7:
-            return None
-        
-        candidate_piece = board[rank, file]
-        if candidate_piece is not None:
-            if target_piece_type is None or (type(candidate_piece) == target_piece_type and candidate_piece.color == target_piece_color):
-                return candidate_piece
-        f_traversed += 1
-            
-    return None
 
 # Classes
 
@@ -214,50 +130,30 @@ class Chess_Piece:
     def unique_move(self, type: int, new_rank, new_file):
         # print("Unique_move called for type: ", type)
         if (type == NORMAL):
+            self.m_game.board[new_rank, new_file] = self
             self.m_game.en_passant_square = None
-            pass
-        elif (type == W_KS_CASTLE):
+        elif (type == W_PROMOTION):
+            self.m_game.board[new_rank, new_file] = get_promotion_choice(new_rank, new_file, self.color, self.m_game)
             self.m_game.en_passant_square = None
-            self.m_game.w_kingside_castle_rights = False
-            self.m_game.w_queenside_castle_rights = False
-
-            # move rook
-            kingside_rook: Rook = self.m_game.board[0, h]
-            assert(kingside_rook is not None)
-
-            self.m_game.last_move_type = NORMAL
-            print("moving rook")
-            kingside_rook.move(0, f)
-
-            print_board(self.m_game.board)
-        elif (type == W_QS_CASTLE):
+        elif (type == B_PROMOTION):
+            self.m_game.board[new_rank, new_file] = get_promotion_choice(new_rank, new_file, self.color, self.m_game)
             self.m_game.en_passant_square = None
-            pass
         elif (type == W_EN_PASSANT):
             ep_square = self.m_game.en_passant_square
             self.m_game.board[ep_square[0] - 1, ep_square[1]] = None
-            self.m_game.en_passant_square = None
-            
-        elif (type == W_PROMOTION):
-            self.m_game.en_passant_square = None
-            pass
-        elif (type == B_KS_CASTLE):
-            self.m_game.en_passant_square = None
-            pass
-        elif (type == B_QS_CASTLE):
-            self.m_game.en_passant_square = None
-            pass
+            self.m_game.board[new_rank, new_file] = self
+            self.m_game.en_passant_square = None 
         elif (type == B_EN_PASSANT):
             ep_square = self.m_game.en_passant_square
             self.m_game.board[ep_square[0] + 1, ep_square[1]] = None
-            self.m_game.en_passant_square = None
-        elif (type == B_PROMOTION):
-            self.m_game.en_passant_square = None
-            pass
+            self.m_game.board[new_rank, new_file] = self
+            self.m_game.en_passant_square = None   
         elif (type == W_PAWN_2S):
             self.m_game.en_passant_square = (new_rank - 1, new_file)
+            self.m_game.board[new_rank, new_file] = self
         elif (type == B_PAWN_2S):
             self.m_game.en_passant_square = (new_rank + 1, new_file)
+            self.m_game.board[new_rank, new_file] = self
 
 
     """
@@ -299,7 +195,7 @@ class Chess_Piece:
         self.unique_move(self.m_game.last_move_type, new_rank, new_file)
         
         # print("Moving piece to new_rank = ", new_rank, " new_file = ", new_file)
-        self.m_game.board[new_rank, new_file] = self
+        
         # print("Vacating old square at self.rank = ", self.rank, "self.file = ", self.file)
         self.m_game.board[self.rank, self.file] = None
 
@@ -403,10 +299,7 @@ class King(Chess_Piece):
             return False
 
         print("Castling is legal")
-        if self.color:
-            self.m_game.last_move_type = W_KS_CASTLE if direction else W_QS_CASTLE
-        else:
-            self.m_game.last_move_type = B_KS_CASTLE if direction else B_QS_CASTLE
+        self.m_game.last_move_type = NORMAL
         return True
             
         
@@ -515,6 +408,10 @@ class Pawn(Chess_Piece):
         direction = 1 if self.color else -1
         start_rank = 1 if self.color else 6
         is_capture = abs(x_displacement) == 1 and y_displacement == direction
+        is_b_promotes = new_rank == 0 and self.color != white
+        is_w_promotes = new_rank == 7 and self.color == white
+        # doesn't consider case of en-passant, which is set if necessary
+        move_type = B_PROMOTION if is_b_promotes else W_PROMOTION if is_w_promotes else NORMAL
 
         if is_capture:
             target_piece = self.m_game.board[new_rank, new_file]
@@ -528,11 +425,12 @@ class Pawn(Chess_Piece):
                 return False
             elif target_piece.color != self.color:
                 print(f"Valid move, {'white' if self.color else 'black'} pawn captures enemy piece diagonally")
+                self.m_game.last_move_type = move_type
                 return True
             else:
                 print("Invalid move, cannot capture own piece")
                 return False
-        else:
+        else: # moving forward
             if x_displacement != 0:
                 print(f"Invalid move, {'white' if self.color else 'black'} pawn can only move forward when not capturing")
                 return False
@@ -541,6 +439,7 @@ class Pawn(Chess_Piece):
             piece_two_in_front = self.m_game.board[self.rank + 2 * direction, self.file] if (self.rank == start_rank) else None
 
             if y_displacement == direction and piece_in_front is None:
+                self.m_game.last_move_type = move_type
                 return True
             elif (
                 y_displacement == 2 * direction
@@ -550,10 +449,12 @@ class Pawn(Chess_Piece):
                 and not self.has_moved
             ):
                 self.m_game.last_move_type = W_PAWN_2S if self.color else B_PAWN_2S
+                self.m_game.last_move_type = move_type
                 return True
             else:
                 print(f"Invalid move, {'white' if self.color else 'black'} pawn can only move forward one square or two squares from starting position")
                 return False
+
 
                 
     def __str__(self):
@@ -657,3 +558,124 @@ def print_board(board):
         print("| " + " | ".join(str(piece) if piece is not None else "  " for piece in board[curr_row, :]) + " |")
         print("-" * 41)
         curr_row -=1
+
+
+# Static Functions 
+
+"""
+Returns the first piece encounter along rank
+Gets called with rank1 = starting rank, rank2 = destination rank
+:param direction: 1 = Going right, 0 = Going left
+"""
+def scan_rank(board, rank, old_file, new_file, direction: int, include_ends = False, target_piece_type = None, target_piece_color = black):
+    range_dir = 1 if direction else -1
+    displ = abs(new_file - old_file)
+
+    start = old_file + range_dir - (include_ends * range_dir)
+    end = new_file + (include_ends * range_dir)
+    print(start, end)
+    for file in range(start, end, range_dir):
+        if file < 0 or file > 7:
+            return None
+        
+        candidate_piece = board[rank, file]
+        if candidate_piece is not None:
+            # print(rank, file)
+            # print(target_piece_type)
+            # print(type(candidate_piece))
+            # print("---")
+            # print(target_piece_color)
+            # print(candidate_piece.color)
+            if target_piece_type is None or (type(candidate_piece) == target_piece_type and candidate_piece.color == target_piece_color):
+                return candidate_piece
+    return None
+
+"""
+Checks if pieces block squares in between self and final destination along rank
+Gets called with rank1 = starting rank, rank2 = destination rank
+:param direction: 1 = Going up, 0 = Going down, -1 = scan entire file
+"""
+def scan_file(board, old_rank, new_rank, file, direction: int, include_ends = False, target_piece_type = None, target_piece_color = black):
+    range_dir = 1 if direction == 1 else -1
+
+    displ = abs(new_rank - old_rank)
+
+    start = old_rank + range_dir - (include_ends * range_dir)
+    end = new_rank + (include_ends * range_dir)
+    for rank in range(start, end, range_dir):
+        if rank < 0 or rank > 7:
+            return None
+        
+        candidate_piece = board[rank, file]
+        if candidate_piece is not None:
+            # print(rank, file)
+            # print(target_piece_type)
+            # print(type(candidate_piece))
+            # print("---")
+            # print(target_piece_color)
+            # print(candidate_piece.color)
+            if target_piece_type is None or (type(candidate_piece) == target_piece_type and candidate_piece.color == target_piece_color):
+                return candidate_piece
+    return None
+
+"""
+:param file_dir: 1 = Going up, 0 = Going down
+:param rank_dir: 1 = Going right, 0 = Going left
+
+"""
+def scan_diag(board, old_rank, old_file, step: int, file_dir: int, rank_dir, include_ends = False, target_piece_type = None, target_piece_color = black):
+    file_range_dir = 1 if file_dir else -1
+    rank_range_dir = 1 if rank_dir else -1
+    # print("file_range_dir: ", file_range_dir)
+    # print("rank_range_dir: ", rank_range_dir)
+    # print("old_file: ", old_file)
+    # print("old_rank: ", old_rank)
+    # print("step: ", step)
+    h_step = step * rank_range_dir
+    f_traversed = 1
+
+    start = old_file + rank_range_dir - (include_ends * rank_range_dir)
+    end =  old_file + h_step + (include_ends * rank_range_dir)
+    for file in range(start, end, rank_range_dir):
+        rank = old_rank + file_range_dir * f_traversed
+        # print("Currently scanning the square: ", file, ", ", rank)
+        if file < 0 or file > 7 or rank < 0 or rank > 7:
+            return None
+        
+        candidate_piece = board[rank, file]
+        if candidate_piece is not None:
+            if target_piece_type is None or (type(candidate_piece) == target_piece_type and candidate_piece.color == target_piece_color):
+                return candidate_piece
+        f_traversed += 1
+            
+    return None
+
+def get_promotion_choice(new_rank, new_file, color, game, require_prompt = False):
+    if require_prompt:
+        choices = (1,2,3,4)
+        choice = 0
+        while True:
+            try:
+                choice = int(input("Select piece to promote to: \n \t 1: Knight \n \t 2: Bishop \n \t 3: Rook \n \t 4: Queen \n"))
+                if (choice not in choices):
+                    print("Invalid input, select number between 1 and 4")
+                else:
+                    break
+            except TypeError:
+                "Invalid input, select number between 1 and 4"
+                continue
+        if choice == 1:
+            return Knight(game, color, new_rank, new_file)
+        elif choice == 2:
+            return Bishop(game, color, new_rank, new_file)
+        elif choice == 3:
+            return Rook(game, color, new_rank, new_file)
+        elif choice == 4:
+            return Queen(game, color, new_rank, new_file)
+        else:
+            print("Illegal choice value")
+            exit()
+
+    else:
+        return Queen(game, color, new_rank, new_file)
+

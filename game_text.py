@@ -105,7 +105,7 @@ def parse_pawn_promotes(move_str, game):
 
 
 def parse_pawn_captures_promotes(move_str, game):
-    return parse_pawn_capture(move_str[0:3], game)
+    return parse_pawn_capture(move_str[0:4], game)
 
 
 def parse_pawn_capture(move_str, game):
@@ -184,6 +184,7 @@ def parse_king_move(move_str, game):
     return
 
 def parse_and_move(move_str, game):
+    print(move_str)
     parsed_move = move_parser(move_str, game)
     if (parsed_move == -1):
         print("Parsing move caused an error")
@@ -195,6 +196,9 @@ def parse_and_move(move_str, game):
     new_rank = parsed_move[1][0]
     new_file = parsed_move[1][1]
 
+    if game.board[old_rank, old_file] is None:
+        print("Error: no piece on originating square")
+        return -1
     game.board[old_rank, old_file].try_move(new_file, new_rank, False)
 
 def play_game():
@@ -231,18 +235,37 @@ def play_game():
     # parse_and_move("exf6", active_game)
     # print_board(active_game.board)
 
-    parse_and_move("a4", active_game)
-    parse_and_move("a5", active_game)
+    # parse_and_move("a4", active_game)
+    # parse_and_move("a5", active_game)
+    # print_board(active_game.board)
+
+    # parse_and_move("Ra3", active_game)
+    # parse_and_move("Ra6", active_game)
+    # print_board(active_game.board)
+
+    # parse_and_move("Rg3", active_game)
+    # parse_and_move("Rf6", active_game)
+    # print_board(active_game.board)
+
+
+    # parse_and_move("Rg8", active_game)
+    # print_board(active_game.board)
+
+    parse_and_move("e4", active_game)
     print_board(active_game.board)
-
-    parse_and_move("Ra3", active_game)
-    parse_and_move("Ra6", active_game)
+    parse_and_move("d5", active_game)
     print_board(active_game.board)
-
-    parse_and_move("Rg3", active_game)
-    parse_and_move("Rf6", active_game)
+    parse_and_move("exd5", active_game)
     print_board(active_game.board)
-
-
-    parse_and_move("Rg8", active_game)
+    parse_and_move("c6", active_game)
+    print_board(active_game.board)
+    parse_and_move("dxc6", active_game)
+    print_board(active_game.board)
+    parse_and_move("h6", active_game)
+    print_board(active_game.board)
+    parse_and_move("cxb7", active_game)
+    print_board(active_game.board)
+    parse_and_move("h5", active_game)
+    print_board(active_game.board)
+    parse_and_move("bxa8=Q", active_game)
     print_board(active_game.board)
